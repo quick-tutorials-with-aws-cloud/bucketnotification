@@ -1,12 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Creates a Bucket with notification, Lambda consumer and a SQS Queue
+Description: Creates two buckets with SQS notification and Lambda notification
 
 Parameters:
-
   LambdaConsumerName:
     Type: String
-    Default: LambdaConsumerName
+    Default: BucketNotification
 
   BucketLambdaSourceCode:
     Type: String
@@ -14,8 +13,8 @@ Parameters:
 
   BucketKeyLambdaConsumerSourceCode:
     Type: String
-    Default: LambdaConsumer.zip
-  
+    Default: BucketNotification.zip
+
   QueueName:
     Type: String
     Default: Queue
@@ -33,40 +32,39 @@ Parameters:
     Default: tg
 
 Resources:
-
   LambdaConsumerExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub ${LambdaConsumerName}ExecutionRole
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Path: "/"
       Policies:
-      - PolicyName: !Sub ${LambdaConsumerName}LogPolicy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-              - logs:*
-            Resource: "*"
-      - PolicyName: !Sub ${LambdaConsumerName}S3Policy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-              - s3:Get*
-            Resource:
-              - !Sub arn:aws:s3:::${BucketNotificationLambdaName}
-              - !Sub arn:aws:s3:::${BucketNotificationLambdaName}/*
+        - PolicyName: !Sub ${LambdaConsumerName}LogPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: "*"
+        - PolicyName: !Sub ${LambdaConsumerName}S3Policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:Get*
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketNotificationLambdaName}
+                  - !Sub arn:aws:s3:::${BucketNotificationLambdaName}/*
 
   LambdaConsumer:
     Type: AWS::Lambda::Function
@@ -100,17 +98,17 @@ Resources:
         - Key: Owner
           Value: !Ref Owner
 
-  QueuePolicy: 
+  QueuePolicy:
     Type: AWS::SQS::QueuePolicy
-    DependsOn: [ Queue ]
-    Properties: 
-      Queues: 
+    DependsOn: [Queue]
+    Properties:
+      Queues:
         - !Sub https://sqs:${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
-      PolicyDocument: 
-        Statement: 
+      PolicyDocument:
+        Statement:
           - Effect: "Allow"
-            Action: 
-              - sqs:SendMessage            
+            Action:
+              - sqs:SendMessage
             Resource: !GetAtt Queue.Arn
             Principal: "*"
             Condition:
@@ -119,7 +117,7 @@ Resources:
 
   BucketNotificationLambda:
     Type: AWS::S3::Bucket
-    DependsOn: [ LambdaConsumer, LambdaPermission ]
+    DependsOn: [LambdaConsumer, LambdaPermission]
     Properties:
       BucketName: !Ref BucketNotificationLambdaName
       AccessControl: Private
@@ -130,7 +128,7 @@ Resources:
       NotificationConfiguration:
         LambdaConfigurations:
           - Event: s3:ObjectCreated:*
-            # Filter: 
+            # Filter:
             Function: !GetAtt LambdaConsumer.Arn
       Tags:
         - Key: Owner
@@ -138,7 +136,7 @@ Resources:
 
   BucketNotificationQueue:
     Type: AWS::S3::Bucket
-    DependsOn: [ Queue, QueuePolicy ]
+    DependsOn: [Queue, QueuePolicy]
     Properties:
       BucketName: !Ref BucketNotificationQueueName
       AccessControl: Private
@@ -149,7 +147,7 @@ Resources:
       NotificationConfiguration:
         QueueConfigurations:
           - Event: s3:ObjectCreated:*
-            # Filter: 
+            # Filter:
             Queue: !GetAtt Queue.Arn
       Tags:
         - Key: Owner

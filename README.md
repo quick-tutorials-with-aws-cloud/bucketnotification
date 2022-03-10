@@ -1,6 +1,5 @@
-# Bucket with notification with a Lambda and a SQS Queue
+# bucketnotification
 
 This project creates:
-- Bucket with notification;
-- Lambda;
-- SQS Queue;
+- A bucket with SQS notification;
+- A bucket with Lambda notification;
