@@ -53,7 +53,9 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:*
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
                 Resource: "*"
         - PolicyName: !Sub ${LambdaConsumerName}S3Policy
           PolicyDocument:
